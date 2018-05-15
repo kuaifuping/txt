@@ -1,4 +1,4 @@
-接口文档
+﻿接口文档
 http://192.168.3.66:9000/swagger-ui.html#!/purchase-order-controller/listPurchaseWarnListUsingPOST
 http://t.royalone.net.cn:9000/swagger-ui.html#!/
 
@@ -14,3 +14,6 @@ http://t.royalone.net.cn:8092/zentao/index.php?m=user&f=login
 
 请大家收藏报价系统的原型地址：
 http://izyftp.gotoip2.com/index.html#g=1&p=%E6%9C%8D%E5%8A%A1%E6%A0%87%E5%87%86%E5%88%97%E8%A1%A8
+
+禅道功能浮渣逻辑编写
+http://t.royalone.net.cn:8092/zentao/index.php?m=doc&f=browse&libID=9
