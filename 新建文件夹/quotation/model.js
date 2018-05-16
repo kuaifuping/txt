@@ -1,11 +1,12 @@
 import tableModel from "srcDir/common/model/tableModel";
+const configURL = require("srcRootDir/webpack-config/base/url.config.js");
 
 const data = tableModel({
-  url: "/sys/install/carrier/list",
+  url: (configURL.remoteServer.productUrl || "") + "/price/product/page",
   method: "POST",
   params: {
-    pageSize: "10",
-    // sort: "t.dispatchTime desc"
+    pageNo: 1,
+    pageSize: 20,
   }
 });
 

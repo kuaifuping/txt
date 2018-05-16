@@ -1,361 +1,161 @@
 import React from "react";
 // import moment from "moment";
 import styles from "./style.less";
-import { Table, Breadcrumb, Row, Col, Button, Cascader, Input, notification, Modal, DatePicker } from "antd";
-import fetch from "srcDir/common/model/itemModel/fetch";
-const confirm = Modal.confirm;
-import { cityMap } from "srcDir/common/model/codeMap";
-import moment from "moment";
-const { RangePicker } = DatePicker;
+import { Table, Breadcrumb, Button, Badge, Affix } from "antd";
+import SearchWrap from "./components/AdvancedSearch.js";
 
-const addressdata = (k) => {
-  // const newdata = [];
-  const newdata = k.map((v) => {
-    const data = {};
-    if (v.children) {
-      data.label = v.geoName;
-      // data.value = v.geoIdcode;
-      data.value = v.geoIdcode;
-      data.children = addressdata(v.children);
-    } else {
-      data.label = v.geoName;
-      // data.value = v.geoIdcode;
-      data.value = v.geoIdcode;
-    }
-    return data;
-  });
-  return newdata;
-};
-const opdata = addressdata(cityMap);
-const routeAddress = {
-  add(addRoute, item) {
-    addRoute({
-      keyName: "",
-      path: "/resource/workeffort/company/operating/add",
-      name: "资源", title: "/resource/workeffort/company/operating/add",
-      component: "resource/workeffort/company/operating/add",
-      paramId: item
-    });
-  },
-  editOrDetail(addRoute, item) {
-    addRoute({
-      keyName: "",
-      path: "/resource/workeffort/company/operating/edit",
-      name: "资源", title: "/resource/workeffort/company/operating/edit",
-      component: "resource/workeffort/company/operating/edit",
-      paramId: item
-    });
-  }
-};
-const routeChecked = {
-  add(_this, val) {
-    routeAddress.add(_this, val);
-  },
-  edit(_this, val) {
-    routeAddress.editOrDetail(_this, val);
-  },
-  detail(_this, val) {
-    routeAddress.editOrDetail(_this, val);
-  }
-};
 // 创建react组件
-const columns = target => [
+const columns = that => [
   {
     title: "报价单号",
     dataIndex: "code",
     key: "code",
   }, {
-    title: "报价单名称",
-    dataIndex: "groupName",
-    key: "groupName",
+    title: "报价名称",
+    dataIndex: "name",
+    key: "name",
   }, {
-    title: "折扣价格",
-    dataIndex: "municipalityCode",
-    key: "municipalityCode",
-    render: (text, record) => (<div className={styles.cascader}>
-      <Cascader
-        options={opdata} placeholder="选择地区" style={{ width: "100%", border: 0, background: "transparent" }}
-        defaultValue={[`${record.provinceCode}`, `${record.countyCode}`, `${record.municipalityCode}`]}
-      />
-    </div>)
+    title: "报价折扣",
+    dataIndex: "supplierName",
+    key: "supplierName",
   }, {
     title: "服务标准",
-    dataIndex: "contact",
-    key: "contact",
+    dataIndex: "pricedBy",
+    key: "pricedBy",
   }, {
     title: "报价标准金额",
-    dataIndex: "contactMobile",
-    key: "contactMobile",
+    dataIndex: "pricedDate",
+    key: "pricedDate",
   }, {
     title: "有效期至",
-    dataIndex: "contactMobile1",
-    key: "contactMobile1",
+    dataIndex: "auditor",
+    key: "auditor"
   }, {
     title: "报价时间",
-    dataIndex: "contactMobile2",
-    key: "contactMobile2",
+    dataIndex: "auditDate",
+    key: "auditDate",
   }, {
     title: "报价人",
-    dataIndex: "contactMobile3",
-    key: "contactMobile3",
+    dataIndex: "statusCode",
+    key: "statusCode",
+    render: (value) => {
+      switch (value) {
+      case "UNCHECKED":
+        return (<span><Badge status="default" />待审核</span>);
+      case "CHECKED":
+        return (<span><Badge status="success" />已审核</span>);
+      default:
+        return (<span><Badge status="warning" />未知错误</span>);
+      }
+    }
   }, {
     title: "操作",
-    dataIndex: "id",
-    key: "id",
-    width: 300,
-    className: styles.tableStyle,
-    render: (text, record) =>
-      (<div>
-        <Button size="small" style={{ marginRight: "10px" }} type="primary" onClick={() => target.showDebtorList({ status: "detail", id: record.code })}>详情</Button>
-        <Button size="small" icon="edit" style={{ marginRight: "10px" }} onClick={() => target.showDebtorList({ status: "edit", id: record.code, roleTypeCode: "INSTALL_CARRIER" })}>编辑</Button>
-        <Button
-          size="small"
-          type="primary"
-          onClick={() => target.toggleServiceStatus(target.state.serviceStatus)}
-          style={{ display: target.state.serviceStatus ? "none" : "inlineBlock", marginRight: "10px" }}
-        >停用</Button>
-        <Button
-          size="small"
-          type="primary"
-          onClick={() => target.toggleServiceStatus(target.state.serviceStatus)}
-          style={{ display: !target.state.serviceStatus ? "none" : "inlineBlock", marginRight: "10px" }}
-        >启用</Button>
-        <Button size="small" type="danger" icon="delete" onClick={() => target.delete(record)}>删除</Button>
-      </div>)
+    render: (value, row) => (
+      <div>
+        <Button size="small" type="primary" style={{ marginRight: "10px" }} onClick={() => that.toDetail("check", row)}>查看</Button>
+        <Button size="small" icon="edit" onClick={() => that.toDetail("edit", row)}>修改</Button>
+      </div>
+    )
   }
 ];
-class ExaminationPlaceRecord extends React.Component {
-  constructor(params) {
-    super(params);
-    // console.log(params);
+class OrderList extends React.Component {
+  constructor(props) {
+    super(props);
     this.state = {
       columns: columns(this),
+      pageSize: 10,
+      mustHasDescription: "false",
       searchParams: {},
-      serviceStatus: false
     };
-    this.showDebtorList = this.showDebtorList.bind(this);
-    this.delete = this.delete.bind(this);
-    this.initSearch = this.initSearch.bind(this);
-    this.toggleServiceStatus = this.toggleServiceStatus.bind(this);
-    this.rowClick = this.rowClick.bind(this);
-    this.rowMouseEnter = this.rowMouseEnter.bind(this);
+    this.toDetail = this.toDetail.bind(this);
+    this.setSearchParams = this.setSearchParams.bind(this);
   }
-  showDebtorList(item) {
+  // 设置搜索条件，搜索
+  setSearchParams(searchParams) {
+    this.setState({ searchParams });
+    console.log("搜索参数：", searchParams);
+    // 刷新表格
+    this.props.actions.search(Object.assign({
+      pageNo: 1,
+      pageSize: this.state.pageSize,
+      mustHasDescription: this.state.mustHasDescription
+    }, searchParams));
+  }
+  // 跳转详情
+  toDetail(type, row) {
     const { addRoute } = this.props.router;
-    routeChecked[item.status](addRoute, item);
+    addRoute({ keyName: "定价详情", path: "/product/sku/priceDetail", name: "定价详情", title: "/product/sku/priceDetail", component: "product/sku/priceDetail", paramId: { params: row, type } });
   }
-  delete(record) {
-    const _this = this;
-    confirm({
-      title: "确定要删除送装资源：" + record.groupName + "吗?",
-      // content: "确定要删除" + record.loginName + "?",
-      okText: "确定",
-      okType: "danger",
-      cancelText: "取消",
-      onOk() {
-        fetch({
-          url: "/sys/install/carrier/delete?code=" + record.code,
-          method: "DELETE",
-          params: {
-            code: record.code,
-          },
-          success: function (response) {
-            if (response.entity.code === "SUCCESS") {
-              notification.success({
-                message: response.entity.msg,
-              });
-              _this.props.actions.search();
-            } else {
-              notification.error({
-                message: response.entity.msg,
-              });
-            }
-          },
-          error() {
 
-          }
-        });
-      },
-      onCancel() {
-      },
-    });
-  }
-  initSearch() {
-    const clearDom = document.querySelector(".ant-col-3 .anticon.anticon-cross-circle.ant-cascader-picker-clear");
-    if (clearDom) {
-      clearDom.click();
-    }
-    this.setState({
-      searchParams: {}
-    });
-    this.props.actions.search();
-  }
-  // 切换服务状态
-  toggleServiceStatus(status) {
-    console.log("切换服务状态");
-    // 按钮显示切换
-    this.setState({ serviceStatus: !status });
-    // 服务标准状态切换【启用】【停止】
-    if (status) {
-      console.log("启用");
-    } else {
-      console.log("停止");
-    }
-  }
-  // 行事件
-  rowClick(record, index, e) {
-    console.log("rowClick");
-    console.log(record);
-    console.log(index);
-    console.log(e);
-  }
-  rowMouseEnter() {
-    console.log("mouseEnter");
-  }
   render() {
-    const { search } = this.props.actions;
-    const { searchParams } = this.state;
-    const getTableList = (params) => {
-      // console.log(params);
-      search(Object.assign(searchParams, params));
+    const rowSelection = {
+      // selectedRowKeys,
+      // selectedRows,
+      onChange: (Keys, Rows) => {
+        this.setState({
+          selectedRowKeys: Keys,
+          selectedRows: Rows
+        });
+        if (Rows.length) {
+          this.setState({
+            isSelected: false
+          });
+        } else {
+          this.setState({
+            isSelected: true
+          });
+        }
+      },
+      getCheckboxProps: record => {
+        let isDld = false;
+        isDld = record.statusCode === "UNCHECKED" || record.statusCode === "REJECTED"; // 判断是否为待审核状态
+        return { disabled: isDld };
+      }
     };
     return (
       <div className={styles.examinationPlaceMsg}>
-        <Breadcrumb separator="/" className={styles.Breadcrumb}>
-          <Breadcrumb.Item>商品管理</Breadcrumb.Item>
-          <Breadcrumb.Item>报单价列表</Breadcrumb.Item>
-        </Breadcrumb>
-        <Row type="flex" justify="start" align="top" className={styles.mg}>
-          <Col span={2} className={styles.label}>报价单名称：</Col>
-          <Col span={3}>
-            <Input
-              placeholder="模糊查询"
-              value={this.state.searchParams.groupName}
-              onChange={
-                e => {
-                  searchParams.groupName = e.target.value;
-                  searchParams.pageNo = 1;
-                  this.setState({
-                    searchParams: searchParams
-                  });
-                }
-              }
-            />
-          </Col>
-          <Col span={2} className={styles.label}>报价单号：</Col>
-          <Col span={3}>
-            <Input
-              style={{ width: "100%" }}
-              placeholder="模糊查询"
-              value={this.state.searchParams.contact}
-              onChange={
-                e => {
-                  searchParams.contact = e.target.value;
-                  searchParams.pageNo = 1;
-                  this.setState({
-                    searchParams: searchParams
-                  });
-                }
-              }
-            />
-          </Col>
-          <Col span={2} className={styles.label}>服务标准：</Col>
-          <Col span={3}>
-            <Input
-              style={{ width: "90%" }}
-              placeholder="模糊查询"
-              value={this.state.searchParams.contactPhone}
-              onChange={
-                e => {
-                  searchParams.contactPhone = e.target.value;
-                  searchParams.pageNo = 1;
-                  this.setState({
-                    searchParams: searchParams
-                  });
-                }
-              }
-            />
-          </Col>
-          <Button type="primary" icon="search" onClick={() => getTableList(searchParams)} style={{ marginRight: 10, float: "right" }}>查询</Button>
-          <Button type="primary" icon="search" onClick={() => getTableList(searchParams)} style={{ marginRight: 10, float: "right" }}>清除</Button>
-        </Row>
-        <Row type="flex" justify="start" align="top" className={styles.mg}>
-          <Col span={2} className={styles.label}>报价时间：</Col>
-          <Col span={3}>
-            {/* <Cascader
-              style={{ width: "90%" }}
-              options={opdata}
-              placeholder="选择地区"
-              onChange={
-                e => {
-                  searchParams.stateProvinceGeoCode = e[0];
-                  searchParams.countyGeoCode = e[1];
-                  searchParams.municipalityGeoCode = e[2];
-                  searchParams.pageNo = 1;
-                  this.setState({
-                    searchParams: searchParams
-                  });
-                }
-              }
-            />*/}
-            <RangePicker
-              defaultValue={[moment("2015/01/01", "YYYY/MM/DD"), moment("2015/01/01", "YYYY/MM/DD")]}
-              format={"YYYY/MM/DD"}
-            />
-          </Col>
-          <Col span={2} className={styles.label}>报价人：</Col>
-          <Col span={3}>
-            <Input
-              style={{ width: "90%" }}
-              placeholder="模糊查询"
-              value={this.state.searchParams.contactPhone}
-              onChange={
-                e => {
-                  searchParams.contactPhone = e.target.value;
-                  searchParams.pageNo = 1;
-                  this.setState({
-                    searchParams: searchParams
-                  });
-                }
-              }
-            />
-          </Col>
-          <Col span={4}>
-            {/* <Button style={{ marginRight: 10 }} onClick={() => this.initSearch()}>清除</Button>*/}
-            <br />
-            <Button type="primary" icon="plus" onClick={() => this.showDebtorList({ status: "add", id: null, roleTypeCode: "INSTALL_CARRIER" })} style={{ marginRight: 10, float: "right" }}>
-              新建报价单
-            </Button>
-          </Col>
-        </Row>
+        <Affix>
+          <Breadcrumb separator="/" className={styles.Breadcrumb}>
+            <Breadcrumb.Item>商品管理</Breadcrumb.Item>
+            <Breadcrumb.Item>物料定价</Breadcrumb.Item>
+          </Breadcrumb>
+        </Affix>
         {
-          this.props.results && <Table
-            rowKey="id"
-            bordered="true"
-            dataSource={this.props.results.data}
-            columns={this.state.columns}
-            rowSelection={{
-              onSelect: () => {}
-            }}
-            pagination={{
-              total: this.props.results.records,
-              current: this.props.results.page,
-              showSizeChanger: true,
-              onChange: (current) => {
-                getTableList({ pageNo: current });
-              },
-              onShowSizeChange: (current, pageSize) => {
-                getTableList({ pageSize: pageSize, pageNo: current });
-              }
-            }}
-            onRowClick={this.rowClick}
-            onRowMouseEnter={this.rowMouseEnter}
-          />
+          this.props.results && <div>
+            <SearchWrap setSearchParams={this.setSearchParams} toDetail={this.toDetail} />
+            <Table
+              rowKey="code"
+              dataSource={this.props.results.data}
+              rowSelection={rowSelection}
+              columns={this.state.columns}
+              pagination={{
+                total: this.props.results.total,
+                current: this.props.results.page,
+                onChange: (current, pageSize) => {
+                  this.props.actions.search(Object.assign({
+                    pageNo: current,
+                    pageSize: pageSize,
+                    mustHasDescription: this.state.mustHasDescription
+                  }, this.state.searchParams));
+                },
+                onShowSizeChange: (current, pageSize) => {
+                  this.setState({ pageSize });
+                  this.props.actions.search(Object.assign({
+                    pageNo: 1,
+                    pageSize: pageSize,
+                    mustHasDescription: this.state.mustHasDescription
+                  }, this.state.searchParams));
+                },
+                showSizeChanger: true,
+                defaultPageSize: 20,
+                pageSizeOptions: ["10", "20", "50", "100", "200", "500"]
+              }}
+            />
+          </div>
         }
       </div>
     );
   }
 }
 
-
-export { ExaminationPlaceRecord as default };
+export { OrderList as default };
