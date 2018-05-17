@@ -1,9 +1,9 @@
 import React from "react";
 // import moment from "moment";
 import styles from "./style.less";
-import { Table, Breadcrumb, Button, Badge, Affix } from "antd";
+import { Table, Breadcrumb, Button, Badge, Modal } from "antd";
 import SearchWrap from "./components/AdvancedSearch.js";
-
+const confirm = Modal.confirm;
 // 创建react组件
 const columns = that => [
   {
@@ -53,7 +53,8 @@ const columns = that => [
     render: (value, row) => (
       <div>
         <Button size="small" type="primary" style={{ marginRight: "10px" }} onClick={() => that.toDetail("check", row)}>查看</Button>
-        <Button size="small" icon="edit" onClick={() => that.toDetail("edit", row)}>修改</Button>
+        <Button size="small" icon="edit" onClick={() => that.toDetail("edit", row)} style={{ marginRight: "10px" }}>修改</Button>
+        <Button size="small" type="danger" icon="delete" onClick={() => that.delete(row)}>删除</Button>
       </div>
     )
   }
@@ -69,6 +70,7 @@ class OrderList extends React.Component {
     };
     this.toDetail = this.toDetail.bind(this);
     this.setSearchParams = this.setSearchParams.bind(this);
+    this.delete = this.delete.bind(this);
   }
   // 设置搜索条件，搜索
   setSearchParams(searchParams) {
@@ -86,7 +88,22 @@ class OrderList extends React.Component {
     const { addRoute } = this.props.router;
     addRoute({ keyName: "定价详情", path: "/product/sku/priceDetail", name: "定价详情", title: "/product/sku/priceDetail", component: "product/sku/priceDetail", paramId: { params: row, type } });
   }
-
+  // 删除行
+  delete(row) {
+    //
+    console.log(row);
+    confirm({
+      title: "?",
+      // content: "确定要删除" + record.loginName + "?",
+      okText: "确定",
+      okType: "danger",
+      cancelText: "取消",
+      onOk() {
+      },
+      onCancel() {
+      },
+    });
+  }
   render() {
     const rowSelection = {
       // selectedRowKeys,
@@ -114,12 +131,10 @@ class OrderList extends React.Component {
     };
     return (
       <div className={styles.examinationPlaceMsg}>
-        <Affix>
-          <Breadcrumb separator="/" className={styles.Breadcrumb}>
-            <Breadcrumb.Item>商品管理</Breadcrumb.Item>
-            <Breadcrumb.Item>物料定价</Breadcrumb.Item>
-          </Breadcrumb>
-        </Affix>
+        <Breadcrumb separator="/" className={styles.Breadcrumb}>
+          <Breadcrumb.Item>商品管理</Breadcrumb.Item>
+          <Breadcrumb.Item>报价单列表</Breadcrumb.Item>
+        </Breadcrumb>
         {
           this.props.results && <div>
             <SearchWrap setSearchParams={this.setSearchParams} toDetail={this.toDetail} />
