@@ -17,3 +17,7 @@ http://izyftp.gotoip2.com/index.html#g=1&p=%E6%9C%8D%E5%8A%A1%E6%A0%87%E5%87%86%
 
 禅道功能浮渣逻辑编写
 http://t.royalone.net.cn:8092/zentao/index.php?m=doc&f=browse&libID=9
+
+
+项目gitLab地址
+http://t.royalone.net.cn:8090/
